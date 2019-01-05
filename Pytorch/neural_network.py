@@ -1,6 +1,10 @@
+# Part of Pytorch Tutorial 60 Minute blitz
+# Link: https://pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 
 class Net(nn.Module):
 
@@ -32,9 +36,57 @@ class Net(nn.Module):
         num_features = 1
         for s in size:
             num_features *= s
-            return num_features
+        return num_features
 
 
-net = Net()
-print(net)
+if __name__ == "__main__":
+
+    net = Net()
+    print(net)
+    params = list(net.parameters())
+    print(len(params))
+    print(params[0].size()) #conv1's .weight
+
+    input = torch.randn(1,1,32,32)
+    out = net(input)
+    print(out)
+
+    net.zero_grad()
+    out.backward(torch.randn(1,10))
+
+
+    output = net(input)
+    target = torch.randn(10)
+    target = target.view(1,-1)
+    criterion = nn.MSELoss()
+
+    loss = criterion(output, target)
+    print(loss)
+
+    print (loss.grad_fn)
+    print(loss.grad_fn.next_functions[0][0]) #Linear
+    print(loss.grad_fn.next_functions[0][0].next_functions[0][0]) #ReLU
+
+    net.zero_grad()
+
+    print('conv1.bias.grad before backward')
+    print(net.conv1.bias.grad)
+
+    loss.backward()
+
+    print('conv1.bias.grad after backward')
+    print(net.conv1.bias.grad)
+
+    learning_rate = 0.01
+    for f in net.parameters():
+        f.data.sub_(f.grad.data * learning_rate)
+
+    optimizer = optim.SGD(net.parameters(), lr =0.01)
+
+    optimizer.zero_grad()
+    output = net(input)
+    loss = criterion(output, target)
+    loss.backward()
+    optimizer.step()
+
         
